@@ -1,0 +1,43 @@
+{
+    "835CfgTemplate" :{
+            "Description":"<#Description of this section of the config file.  Reference only.#>",
+            "sourcePath": "<#Path where original files are located for processing.#>",
+            "extractedPayee": "<# Full N1[*]PE[*] Regular Expression of the organization to be extracted.#>",
+            "archivedSuffix": "<# Optional Suffix to add to each file name archved. Key phrase <#DATETIME#> available.#>",
+            "extractedSuffix": "<# Optional Suffix to add to each file name extracted. Key phrase <#DATETIME#> available.#>",
+            "processedSuffix": "<# Optional Suffix to add to each file name processed. Key phrase <#DATETIME#> available.#>",
+            "archivedPath": "<# UNC Path to where the original file is to be moved (archived).#>",
+            "extractedPath": "<# UNC Path to where the extracted entries are to be written.#>",
+            "processedPath": "<# UNC Path to where the remaining entries are to be written.#>",
+            "archiveSource": "<# Boolean if original is to be archived.#>",
+            "debugMode": "<# VERBOSE,DEBUG,INFO,WARNING,ERROR,CRITICAL (suggested = INFO) #>"
+          },
+    "835Test" :{
+            "Description":"Test Split of Med Billing 835 data",
+            "sourcePath": "//shfs01.spencer.local/home/greg/Avera/Data/PMI/835_20220331/Test/",
+            "extractedPayee": "N1[*]PE[*]MIDWEST RADIOLOGY AND IMAGING",
+            "archivedSuffix": "_<#DATETIME#>",
+            "extractedSuffix": "_MWRAD",
+            "processedSuffix": "",
+            "archivedPath": "//shfs01.spencer.local/home/greg/Avera/Data/PMI/835_20220331/Archived/",
+            "extractedPath": "//shfs01.spencer.local/home/greg/Avera/Data/PMI/835_20220331/Extracted/",
+            "processedPath": "//shfs01.spencer.local/home/greg/Avera/Data/PMI/835_20220331/Processed/",
+            "archiveSource": true,
+            "debugMode": "DEBUG"
+          },
+    "PMI" :{
+            "Description":"PMI Med Billing 835 data",
+            "sourcePath": "C:/Temp/835/",
+            "extractedPayee": "N1[*]PE[*]MIDWEST RADIOLOGY AND IMAGING",
+            "archivedSuffix": "_<#DATETIME#>",
+            "extractedSuffix": "_MWRAD",
+            "processedSuffix": "",
+            "archivedPath": "C:/Temp/835/Archived/",
+            "extractedPath": "C:/Temp/835/Extracted/",
+            "processedPath": "C:/Temp/835/Processed/",
+            "archiveSource": true,
+            "debugMode": "INFO"
+          }
+
+          
+}
