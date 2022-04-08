@@ -36,7 +36,7 @@
             "extractedPath": "C:/Temp/835/Extracted/",
             "processedPath": "C:/Temp/835/Processed/",
             "archiveSource": true,
-            "debugMode": "INFO"
+            "debugMode": "DEBUG"
           }
 
           

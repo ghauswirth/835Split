@@ -184,7 +184,7 @@ def ReturnExtractProcess(currentLine):
 #*******************************************************************************
 #******** WriteCurrentList *****************************************************
 #*******************************************************************************
-def WriteCurrentList(extractProcessed,txnCountTuple):
+def WriteCurrentList(extractProcessed,txnCountTuple,currentLineCount):
     try:
         txnProcessed,txnExtracted = txnCountTuple
         extractedFile = open(extractedFullPath,'a')
@@ -198,11 +198,11 @@ def WriteCurrentList(extractProcessed,txnCountTuple):
                     match = re.search(coreCmd835[loopWrite],writeLine)
                     if match and match.start() == 0:
                         if coreAction835[loopWrite] == 1:       #ST*835*    beginning of a transaction set
-                            writeLine = "ST*835*" + str(1000 + int(txnExtracted)+1)+ "~\n"
+                            writeLine = "ST*835*%s~\n" % str(1000 + int(txnExtracted)+1)
                         elif coreAction835[loopWrite] == 4:     #SE*835     end oftransaction set 
-                            writeLine = "SE*835*" + str(1000 + int(txnExtracted)+1)+ "~\n"
+                            writeLine = "SE*%s*%s~\n" % (str(currentLineCount),str(1000 + int(txnExtracted)+1))
                         elif coreAction835[loopWrite] == 3:     #GE*        end of the group set
-                            writeLine = "GE*" + str(int(txnExtracted))+ "*1~\n"
+                            writeLine = "GE*%s*1~\n" % str(int(txnExtracted))
                     loopWrite+=1
                 if extractProcessed in (0,2):
                     extractedFile.write(writeLine)
@@ -212,11 +212,11 @@ def WriteCurrentList(extractProcessed,txnCountTuple):
                     match = re.search(coreCmd835[loopWrite],writeLine)
                     if match and match.start() == 0:
                         if coreAction835[loopWrite] == 1:       #ST*835*    beginning of a transaction set
-                            writeLine = "ST*835*" + str(1000 + int(txnProcessed)+1)+ "~\n"
+                             writeLine = "ST*835*%s~\n" % str(1000 + int(txnExtracted)+1)
                         elif coreAction835[loopWrite] == 4:     #SE*835     end oftransaction set 
-                            writeLine = "SE*835*" + str(1000 + int(txnProcessed)+1)+ "~\n"
+                            writeLine = "SE*%s*%s~\n" % (str(currentLineCount),str(1000 + int(txnExtracted)+1))
                         elif coreAction835[loopWrite] == 3:     #GE*        end of the group set
-                            writeLine = "GE*" + str(int(txnProcessed))+ "*1~\n"
+                            writeLine = "GE*%s*1~\n" % str(int(txnExtracted))
                     loopWrite+=1
                 if extractProcessed in (0,1):
                     processedFile.write(writeLine)
@@ -256,6 +256,7 @@ def process835DataCORE(sourceFileName):
             currentFileLineCount = len(currentFile.split("~"))
             iLineCount = 0
             currentTxnTuple = 0,0
+            txnLineCount = 0
             writeExtractProcessed = 0
             try:
                 while iLineCount < currentFileLineCount:
@@ -273,12 +274,13 @@ def process835DataCORE(sourceFileName):
                                 print(coreColor835[iLoop] + "%s" % coreCmd835[iLoop],end='')
 
                             if coreAction835[iLoop] == 1:       #ST*835*    beginning of a transaction set
-                                currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple)
+                                currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
                                 writeExtractProcessed = 0
+                                txnLineCount = 0
                             elif coreAction835[iLoop] == 2:     #N1*PE      payee indicator
                                 writeExtractProcessed = ReturnExtractProcess(currentLine)
                             elif coreAction835[iLoop] == 3:     #GE*        end of the group set
-                                currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple)
+                                currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
                                 writeExtractProcessed = 0
 
                             if writeExtractProcessed == 2:
@@ -289,8 +291,9 @@ def process835DataCORE(sourceFileName):
                     if not bAppended:
                         currentTransationSet.append(currentLine)
                     iLineCount+=1
+                    txnLineCount += 1
                 writeExtractProcessed = 0
-                writeExtractProcessed = WriteCurrentList(writeExtractProcessed,currentTxnTuple)
+                writeExtractProcessed = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
             except Exception as e:
                 print(textStyle.REDonBLACK + "ERROR:\t",end='')
                 print(textStyle.RESET + "iLineCount: %s %s" % (iLineCount,e))
@@ -404,12 +407,8 @@ if (sourcePath != ""):
 
             extractedFileName = os.path.basename(fileName).split('.')[0] + extractedSuffix.replace("<#DATETIME#>",fileDateTime) 
             extractedFileName += "." + fileTypeReturned
-            #if len(os.path.basename(fileName).split('.')) == 2:
-            #    extractedFileName += "." + os.path.basename(fileName).split('.')[1]
             processedFileName = os.path.basename(fileName).split('.')[0] + processedSuffix.replace("<#DATETIME#>",fileDateTime) 
             processedFileName += "." + fileTypeReturned
-            #if len(os.path.basename(fileName).split('.')) == 2:
-            #    processedFileName += "." + os.path.basename(fileName).split('.')[1]
             archivedFileName = os.path.basename(fileName).split('.')[0] + archivedSuffix.replace("<#DATETIME#>",fileDateTime)
             if len(os.path.basename(fileName).split('.')) == 2:
                 archivedFileName += "." + os.path.basename(fileName).split('.')[1]
