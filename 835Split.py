@@ -132,7 +132,7 @@ def DetermineFileFormat(sourceFileName):
     try:
         with open(sourceFileName,'r') as file:
             try:
-                docType = ""
+                docType = "unknown"
                 iLineCount = 0
                 currentDateTime = str(datetime.datetime.now().strftime(logDateTimeFormat))
                 print(textStyle.RESET + "%s\t" % currentDateTime,end='')
@@ -319,7 +319,7 @@ writeExtractProcessed = 0
 currentTransationSet = list()
 
 if (len(sys.argv) == 1):
-    configRequest = "835Test"      #"PMI"
+    configRequest = "PMI"      #"835Test"      #"PMI"
     
 if (len(sys.argv) >= 2):
     configRequest = sys.argv[1]
@@ -399,12 +399,17 @@ if (sourcePath != ""):
         fileDateTime = datetime.datetime.now().strftime("%Y-%m-%d%H%M")           
         sourceFilePath = os.path.join(sourcePath, fileName)
         if (os.path.isfile(sourceFilePath)==True):                  #determine this is a file and fits the filter pattern and not a directory
+
+            fileTypeReturned = DetermineFileFormat(sourceFilePath)
+
             extractedFileName = os.path.basename(fileName).split('.')[0] + extractedSuffix.replace("<#DATETIME#>",fileDateTime) 
-            if len(os.path.basename(fileName).split('.')) == 2:
-                extractedFileName += "." + os.path.basename(fileName).split('.')[1]
+            extractedFileName += "." + fileTypeReturned
+            #if len(os.path.basename(fileName).split('.')) == 2:
+            #    extractedFileName += "." + os.path.basename(fileName).split('.')[1]
             processedFileName = os.path.basename(fileName).split('.')[0] + processedSuffix.replace("<#DATETIME#>",fileDateTime) 
-            if len(os.path.basename(fileName).split('.')) == 2:
-                processedFileName += "." + os.path.basename(fileName).split('.')[1]
+            processedFileName += "." + fileTypeReturned
+            #if len(os.path.basename(fileName).split('.')) == 2:
+            #    processedFileName += "." + os.path.basename(fileName).split('.')[1]
             archivedFileName = os.path.basename(fileName).split('.')[0] + archivedSuffix.replace("<#DATETIME#>",fileDateTime)
             if len(os.path.basename(fileName).split('.')) == 2:
                 archivedFileName += "." + os.path.basename(fileName).split('.')[1]
@@ -416,8 +421,6 @@ if (sourcePath != ""):
             processedFullPath = os.path.join(processedPath, processedFileName)
             archivedFullPath = os.path.join(archivedPath, archivedFileName)
 
-            fileTypeReturned = DetermineFileFormat(sourceFilePath)
-            
             logging.info("Document type: %s %s" % (fileTypeReturned,sourceFilePath))
 
             if fileTypeReturned == "835":
