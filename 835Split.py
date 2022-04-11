@@ -1,10 +1,10 @@
-import logging #import exception
+import logging 
 import shutil
 import datetime
 import json
 import sys
 import os
-import re               #Regular Expression
+import re               
 
 # Class of different styles
 class textStyle():
