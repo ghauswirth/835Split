@@ -4,7 +4,8 @@ import datetime
 import json
 import sys
 import os
-import re               
+import re
+from tkinter import E               
 
 # Class of different styles
 class textStyle():
@@ -85,15 +86,11 @@ def VerifyAndCreateDirectory(dirNew):
               try:
                   os.makedirs(dirNew)
               except IOError as e:
-                print(textStyle.REDonBLACK + "ERROR creating directory:\t",end='')
-                print(textStyle.YELLOWonBLACK + "%s" % dirNew)
-                print(textStyle.RESET + "%s" % e)
+                logging.error("ERROR creating directory:\t%s\n\t%s" % (dirNew,e))
           else:
               pass
       except IOError as e:
-        print(textStyle.REDonBLACK + "ERROR verifying path:\t",end='')
-        print(textStyle.YELLOWonBLACK + "%s" % dirNew)
-        print(textStyle.RESET + "%s" % e)
+        logging.error("ERROR verifying path:\t%s\n\t%s" % (dirNew,e))
   else:
       pass    
   return dirNew      
@@ -103,22 +100,27 @@ def CheckLogFileSize(logName):
     try:
         maxFileSize = 10000
         maxNumberOfBackups = 10
-        logFileSize = os.stat(logName)
-        if (logFileSize.st_size > maxFileSize):
-            fileNameCorePath,fileNameExtension = os.path.splitext(logName)
-            newLogNameCore = fileNameCorePath + "$$" + fileNameExtension
-            for x in range(maxNumberOfBackups,0,-1):
-                newLogName = newLogNameCore.replace("$$","-" + str(x))
-                if (x==10)and(os.path.exists(newLogName)):
-                    os.remove(newLogName)
-                newLogSubName = newLogNameCore.replace("$$","-" + str(x-1))
-                if (x>1)and(os.path.exists(newLogSubName)):
-                    os.rename(newLogSubName,newLogName)  
-            os.rename(logName,newLogName)
+        if os.path.exists(logName):
+            logFileSize = os.stat(logName)
+            if (logFileSize.st_size > maxFileSize):
+                fileNameCorePath,fileNameExtension = os.path.splitext(logName)
+                newLogNameCore = fileNameCorePath + "$$" + fileNameExtension
+                for x in range(maxNumberOfBackups,0,-1):
+                    newLogName = newLogNameCore.replace("$$","-" + str(x))
+                    if (x==10)and(os.path.exists(newLogName)):
+                        os.remove(newLogName)
+                    newLogSubName = newLogNameCore.replace("$$","-" + str(x-1))
+                    if (x>1)and(os.path.exists(newLogSubName)):
+                        os.rename(newLogSubName,newLogName)  
+                os.rename(logName,newLogName)
+            else:
+                pass
         else:
+            logFile = open(logName,'w')
+            logFile.close()
             pass
     except Exception as e:
-        logging.error("CheckLogFileSize %s" % logName)
+        logging.error("CheckLogFileSize %s\n\t%s" % (logName,e))
     finally:
         return logName    
 
@@ -135,9 +137,7 @@ def DetermineFileFormat(sourceFileName):
                 docType = "unknown"
                 iLineCount = 0
                 currentDateTime = str(datetime.datetime.now().strftime(logDateTimeFormat))
-                print(textStyle.RESET + "%s\t" % currentDateTime,end='')
-                print(textStyle.YELLOWonBLACK + "Verifying file type: ",end='')
-                print(textStyle.RESET + "%s" % sourceFileName)
+                print("%s\tVerifying file type: %s" % (currentDateTime,sourceFileName))
 
                 currentFile = file.read()
                 currentFileLines = currentFile.split("~")
@@ -154,18 +154,14 @@ def DetermineFileFormat(sourceFileName):
                                 docType = typeReturn[iLoop]
                                 break
                         except Exception as e:
-                            print(textStyle.REDonBLACK + "ERROR:\t",end='')
-                            print(textStyle.RESET + "iLineCount: %s %s" % (iLineCount,e))
+                            logging.error("Error iLineCount: %s\n\t%s" % (iLineCount,e))
                         iLoop+=1
                     iLineCount+=1
             finally:
                 if not file.closed:        
                     file.close()
     except IOError as e:
-        print(textStyle.REDonBLACK + "ERROR opening source file:\t",end='')
-        print(textStyle.YELLOWonBLACK + "%s" % sourceFileName)
-        print(textStyle.RESET + "%s" % e)
-
+        logging.error("ERROR opening source file:\t%s\n%s" % (sourceFileName,e))
     finally:
         if (bVerbose): 
             logging.debug("Document type: %s" % docType)
@@ -180,6 +176,15 @@ def ReturnExtractProcess(currentLine):
     if match:
         returnValue = 2
     return returnValue
+
+#*******************************************************************************
+#******** DeleteEmptyExtractedFile *********************************************
+#*******************************************************************************
+def DeleteEmptyExtractedFile():
+    try:
+        os.remove(extractedFullPath)
+    except Exception as e:
+        logging.error("Removing empty Extracted file ERROR:\t%s\n\t%s" % (extractedFullPath,e))
 
 #*******************************************************************************
 #******** WriteCurrentList *****************************************************
@@ -233,8 +238,7 @@ def WriteCurrentList(extractProcessed,txnCountTuple,currentLineCount):
         currentTransationSet.clear()       
 
     except Exception as e:
-        print(textStyle.REDonBLACK + " WriteCurrentList ERROR:\t",end='')
-        print(textStyle.RESET + "extractProcessed: %s \n%s" % (extractProcessed,e))
+        logging.error("WriteCurrentList ERROR:\t%s\n\t%s" % (extractProcessed,e))
     finally:
         return (txnProcessed,txnExtracted) 
 
@@ -246,9 +250,7 @@ def process835DataCORE(sourceFileName):
     try:
         with open(sourceFileName,'r') as file:
             currentDateTime = str(datetime.datetime.now().strftime(logDateTimeFormat))
-            print(textStyle.RESET + "%s\t" % currentDateTime,end='')
-            print(textStyle.YELLOWonBLACK + "Splitting 835 data: ",end='')
-            print(textStyle.RESET + "%s" % sourceFileName)
+            print("%s\tSplitting 835 data: %s" % (currentDateTime,sourceFileName))
             logging.info("Splitting 835 data: %s" % sourceFileName)
 
             currentFile = file.read()
@@ -258,6 +260,7 @@ def process835DataCORE(sourceFileName):
             currentTxnTuple = 0,0
             txnLineCount = 0
             writeExtractProcessed = 0
+            extractedFileAccessed = 0
             try:
                 while iLineCount < currentFileLineCount:
                     currentLine =  currentFileLines[iLineCount].replace("\n","")
@@ -267,11 +270,7 @@ def process835DataCORE(sourceFileName):
                         match = re.search(coreCmd835[iLoop],currentLine)
                         if match and match.start() == 0:
                             if (coreDisplay835[iLoop] == 1):
-                                print(textStyle.GREENonBLACK + "835 ",end='')
-                                print(textStyle.RESET + "[",end='')
-                                print(textStyle.CYANonBLACK + "%s" % iLineCount,end='')
-                                print(textStyle.RESET + "]\t",end='')
-                                print(coreColor835[iLoop] + "%s" % coreCmd835[iLoop],end='')
+                                print("835 [%s]\t%s" % (iLineCount,currentLine))
 
                             if coreAction835[iLoop] == 1:       #ST*835*    beginning of a transaction set
                                 currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
@@ -279,14 +278,11 @@ def process835DataCORE(sourceFileName):
                                 txnLineCount = 0
                             elif coreAction835[iLoop] == 2:     #N1*PE      payee indicator
                                 writeExtractProcessed = ReturnExtractProcess(currentLine)
+                                if writeExtractProcessed == 2:
+                                    extractedFileAccessed += 1 
                             elif coreAction835[iLoop] == 3:     #GE*        end of the group set
                                 currentTxnTuple = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
                                 writeExtractProcessed = 0
-
-                            if writeExtractProcessed == 2:
-                                print(textStyle.MAGENTAonBLACK + "\t%s" % currentLine)
-                            else:
-                                print(textStyle.RESET + "\t%s" % currentLine)
                         iLoop+=1
                     if not bAppended:
                         currentTransationSet.append(currentLine)
@@ -295,19 +291,16 @@ def process835DataCORE(sourceFileName):
                 writeExtractProcessed = 0
                 writeExtractProcessed = WriteCurrentList(writeExtractProcessed,currentTxnTuple,txnLineCount)
             except Exception as e:
-                print(textStyle.REDonBLACK + "ERROR:\t",end='')
-                print(textStyle.RESET + "iLineCount: %s %s" % (iLineCount,e))
+                logging.error("Error iLineCount: %s\n\t%s" % (iLineCount,e))
                
             currentDateTime = str(datetime.datetime.now().strftime(logDateTimeFormat))
-            print(textStyle.RESET + "%s\t" % currentDateTime,end='')
-            print(textStyle.YELLOWonBLACK + "Completed processing of : ",end='') 
-            print(textStyle.RESET + "%s" % sourceFileName)
+            print("%s\tCompleted processing of : %s" % (currentDateTime,sourceFileName))
             if not file.closed:        
                 file.close()
+            if extractedFileAccessed == 0:
+                DeleteEmptyExtractedFile()
     except IOError as e:
-        print(textStyle.REDonBLACK + "ERROR opening 835 source file:\t",end='')
-        print(textStyle.YELLOWonBLACK + "%s" % sourceFileName)
-        print(textStyle.RESET + "%s" % e)
+        logging.error("Error opening 835 source file:\t%s\n\t%s" % (sourceFileName,e))
 
     
 #*******************************************************************************
@@ -359,9 +352,7 @@ try:
     extractedPath = VerifyAndCreateDirectory((d[configRequest]['extractedPath']))
 
 except Exception as e:
-    print(textStyle.REDonBLACK + "ERROR opening config file:\t",end='')
-    print(textStyle.YELLOWonBLACK + "%s" % configFilename)
-    print(textStyle.RESET + "%s" % e)
+    logging.error("Error opening config file:\t%s\n\t%s" % (configFilename,e))
     
 #***** Configure Logging *****
 localLogPath = VerifyAndCreateDirectory(os.getcwd() + "\\log")              #verify directory structure exists
@@ -377,8 +368,10 @@ while debugLoop < len(debugSearch):
         logLevel = debugReturn[debugLoop]
         bVerbose = debugVerbose[debugLoop]
     debugLoop += 1
-
-logging.basicConfig(filename=localLogPath, encoding='utf-8', level=logLevel,format='%(asctime)s\t%(levelname)s\t%(message)s', datefmt='%Y-%m-%d %H:%M')
+try:
+    logging.basicConfig(filename=localLogPath, encoding='utf-8', level=logLevel,format='%(asctime)s\t%(levelname)s\t%(message)s', datefmt='%Y-%m-%d %H:%M')
+except Exception as e:
+    print("Init logging ERROR: %s" % e)
 
 logging.info("********** Beginning of process **********")
 
@@ -399,20 +392,42 @@ logging.debug("debugMode: %s" % debugMode)
 if (sourcePath != ""):
     fileNames = os.listdir(sourcePath)                         #return list of file names
     for fileName in fileNames:
-        fileDateTime = datetime.datetime.now().strftime("%Y-%m-%d%H%M")           
+        fileDateTime = datetime.datetime.now().strftime("%Y_%m_%d%H%M")           
         sourceFilePath = os.path.join(sourcePath, fileName)
         if (os.path.isfile(sourceFilePath)==True):                  #determine this is a file and fits the filter pattern and not a directory
 
             fileTypeReturned = DetermineFileFormat(sourceFilePath)
 
-            extractedFileName = os.path.basename(fileName).split('.')[0] + extractedSuffix.replace("<#DATETIME#>",fileDateTime) 
-            extractedFileName += "." + fileTypeReturned
-            processedFileName = os.path.basename(fileName).split('.')[0] + processedSuffix.replace("<#DATETIME#>",fileDateTime) 
-            processedFileName += "." + fileTypeReturned
-            archivedFileName = os.path.basename(fileName).split('.')[0] + archivedSuffix.replace("<#DATETIME#>",fileDateTime)
-            if len(os.path.basename(fileName).split('.')) == 2:
-                archivedFileName += "." + os.path.basename(fileName).split('.')[1]
+            extractedFileName = ""
+            processedFileName = ""
+            archivedFileName = ""
+
+            fileNamePartCount = len(os.path.basename(fileName).split('.'))
+            curPartCount = 0
+            while curPartCount < (fileNamePartCount-1):
+                extractedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                processedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                archivedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                if fileNamePartCount-curPartCount > 2:
+                    extractedFileName += '_'
+                    processedFileName += '_'
+                    archivedFileName += '_'
+                curPartCount += 1
             
+            extractedFileName += extractedSuffix.replace("<#DATETIME#>",fileDateTime) 
+            processedFileName += processedSuffix.replace("<#DATETIME#>",fileDateTime)
+            archivedFileName += archivedSuffix.replace("<#DATETIME#>",fileDateTime)
+
+            extractedFileName += "." + fileTypeReturned
+            processedFileName += "." + fileTypeReturned
+            if fileNamePartCount > 1:
+                 archivedFileName += "." + os.path.basename(fileName).split('.')[fileNamePartCount-1]
+            
+            logging.info("extractedFileName: %s from: %s" % (extractedFileName,fileName))
+            logging.info("processedFileName: %s from: %s" % (processedFileName,fileName))
+            logging.info("archivedFileName: %s from: %s" % (archivedFileName,fileName))
+
+
             if bVerbose:
                 logging.debug("archivedFileName: %s" % str(archivedFileName))
 
@@ -423,25 +438,20 @@ if (sourcePath != ""):
             logging.info("Document type: %s %s" % (fileTypeReturned,sourceFilePath))
 
             if fileTypeReturned == "835":
-                print(textStyle.RESET + "\t%s is an " % sourceFilePath,end='')
-                print(textStyle.YELLOWonBLACK + fileTypeReturned,end='')
-                print(textStyle.RESET + " file format.")
+                print("\t%s is an %s file format." % (sourceFilePath,fileTypeReturned))
                 try:
                     extractedFile = open(extractedFullPath,'w')
                     extractedFile.close()
                     processedFile = open(processedFullPath,'w')
                     processedFile.close()
                 except Exception as e:
-                    print(textStyle.REDonBLACK + "File creation ERROR:\t",end='')
-                    print(textStyle.RESET + "%s" % e)
+                    logging.error("Extracted/processed file creation ERROR:\t%s\t%s\n\t%s" % (extractedFullPath,processedFullPath,e))
                     break
                 else:
                     process835DataCORE(sourceFilePath)
                     
             else:
-                print(textStyle.RESET + "\t%s is a " % sourceFilePath,end='')
-                print(textStyle.YELLOWonBLACK + fileTypeReturned,end='')
-                print(textStyle.RESET + " file format and not configured for processing.")
+                print("\t%s is a %s file format and not configured for processing." % (sourceFilePath,fileTypeReturned))
                 logging.warning("%s file format is not configured for processing: %s" %(fileTypeReturned,sourceFilePath))
 
             #****** archive if path specified                
@@ -449,9 +459,9 @@ if (sourcePath != ""):
                 try:  
                     shutil.move(sourceFilePath,archivedFullPath)
                 except IOError as e:
-                    logging.error("Failed file archival of %s\n\tto %s" % (sourceFilePath,archivedFullPath))
+                    logging.error("Failed file archival of %s to %s" % (sourceFilePath,archivedFullPath))
                 else:
-                    logging.info("Archived %s to \n\t%s" % (sourceFilePath,archivedFullPath)) 
+                    logging.info("Archived %s to %s" % (sourceFilePath,archivedFullPath)) 
                     pass
             else:
                 pass
