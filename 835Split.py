@@ -7,54 +7,20 @@ import os
 import re
 from tkinter import E               
 
-# Class of different styles
-class textStyle():
-    RESET = '\033[0m'
-    BRIGHTWHITEonBLACK = '\033[1m'
-    UNDERLINE = '\033[4m'
-    GRAYonWHITE = '\033[7m'
-    BLACKonBLACK = '\033[30m'
-    REDonBLACK = '\033[31m'
-    GREENonBLACK = '\033[32m'
-    YELLOWonBLACK = '\033[33m'
-    BLUEonBLACK = '\033[34m'
-    MAGENTAonBLACK = '\033[35m'
-    CYANonBLACK = '\033[36m'
-    WHITEonBLACK = '\033[37m'
-    WHITEonRED = '\033[41m'
-    WHITEonGREEN = '\033[42m'
-    WHITEonYELLOW = '\033[43m'
-    WHITEonBLUE = '\033[44m'
-    WHITEonMAGENTA = '\033[45m'
-    WHITEonCYAN = '\033[46m'
-    GRAYonWHITE = '\033[47m'
-    GRAYonBLACK = '\033[90m'
-    GRAYonLtGRAY = '\033[100m'
-    GRAYonLtRED = '\033[101m'
-    GRAYonLtGREEN = '\033[102m'
-    GRAYonLtYELLOW = '\033[103m'
-    GRAYonLtBLUE = '\033[104m'
-    GRAYonLtMAGENTA = '\033[105m'
-    GRAYonLtCYAN = '\033[106m'
 
 coreCmd835 = ("ST[*]835[*][0-9][0-9][0-9][0-9]"
                 ,"N1[*]PR"
                 ,"N1[*]PE"
                 ,"SE[*]"
                 ,"GE[*]")
-coreColor835 = (textStyle.GREENonBLACK
-            ,textStyle.GRAYonBLACK
-            ,textStyle.CYANonBLACK
-            ,textStyle.REDonBLACK
-            ,textStyle.BRIGHTWHITEonBLACK)
+
 coreDisplay835 = (1,1,1,1,1)
 coreAction835 = (1,0,2,4,3)
 
 typeSearch = ("ST[*]277","ST[*]835","ST[*]837")
 typeReturn = ("277","835","837")
 
-extractedPayee = "N1[*]PE[*]MIDWEST RADIOLOGY AND IMAGING"
-
+extractedPayee = ""
 
 clearScreen = lambda: os.system('CLS')      #Windows
 clearScreenVS = lambda: os.system('clear')  #specific to VS Code and linux
@@ -404,16 +370,21 @@ if (sourcePath != ""):
 
             fileNamePartCount = len(os.path.basename(fileName).split('.'))
             curPartCount = 0
-            while curPartCount < (fileNamePartCount-1):
-                extractedFileName += os.path.basename(fileName).split('.')[curPartCount]
-                processedFileName += os.path.basename(fileName).split('.')[curPartCount]
-                archivedFileName += os.path.basename(fileName).split('.')[curPartCount]
-                if fileNamePartCount-curPartCount > 2:
-                    extractedFileName += '_'
-                    processedFileName += '_'
-                    archivedFileName += '_'
-                curPartCount += 1
-            
+            if fileNamePartCount > 1:
+                while curPartCount < (fileNamePartCount-1):
+                    extractedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                    processedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                    archivedFileName += os.path.basename(fileName).split('.')[curPartCount]
+                    if fileNamePartCount-curPartCount > 2:
+                        extractedFileName += '_'
+                        processedFileName += '_'
+                        archivedFileName += '_'
+                    curPartCount += 1
+            else:
+                extractedFileName = fileName
+                processedFileName = fileName
+                archivedFileName = fileName
+
             extractedFileName += extractedSuffix.replace("<#DATETIME#>",fileDateTime) 
             processedFileName += processedSuffix.replace("<#DATETIME#>",fileDateTime)
             archivedFileName += archivedSuffix.replace("<#DATETIME#>",fileDateTime)
@@ -423,9 +394,9 @@ if (sourcePath != ""):
             if fileNamePartCount > 1:
                  archivedFileName += "." + os.path.basename(fileName).split('.')[fileNamePartCount-1]
             
-            logging.info("extractedFileName: %s from: %s" % (extractedFileName,fileName))
-            logging.info("processedFileName: %s from: %s" % (processedFileName,fileName))
-            logging.info("archivedFileName: %s from: %s" % (archivedFileName,fileName))
+            logging.info("extractedFileName[%s]: %s from: %s" % (fileNamePartCount,extractedFileName,fileName))
+            logging.info("processedFileName[%s]: %s from: %s" % (fileNamePartCount,processedFileName,fileName))
+            logging.info("archivedFileName[%s]: %s from: %s" % (fileNamePartCount,archivedFileName,fileName))
 
 
             if bVerbose:
