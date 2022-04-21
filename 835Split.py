@@ -5,7 +5,7 @@ import json
 import sys
 import os
 import re
-from tkinter import E               
+#from tkinter import E               
 
 
 coreCmd835 = ("ST[*]835[*][0-9][0-9][0-9][0-9]"
